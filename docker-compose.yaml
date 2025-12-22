@@ -1,0 +1,62 @@
+version: '3.3'
+services:
+  client:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile  
+    tty: true
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - frontend
+
+  mongodb:
+    image: mongo
+    container_name: mongo
+    restart: unless-stopped
+    command: mongod --auth
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: zh
+      MONGO_INITDB_ROOT_PASSWORD: test
+      MONGO_INITDB_DATABASE: mongotask
+      MONGODB_DATA_DIR: /data/db
+      MONGODB_LOG_DIR: /dev/null 
+    volumes:
+      - mongodbdata:/data/db
+    networks:
+      - backend
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: gunicorn --bind 0.0.0.0:5000 mongo:app
+    ports:
+      - "5000:5000" 
+    environment:
+      MONGODB_DATABASE: mongotask
+      MONGODB_HOSTNAME: mongodb  
+      MONGODB_USERNAME: ziyati
+      MONGODB_PASSWORD: test    
+    volumes:
+      - backend
+    depends_on:
+      - mongodb
+    networks:
+      - backend
+      - frontend 
+
+networks:
+  backend:
+    driver: bridge
+  frontend:
+    driver: bridge
+
+volumes:
+  mongodbdata:
+    driver: local
+  appdata:
+    driver: local  
