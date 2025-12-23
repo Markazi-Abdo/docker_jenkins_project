@@ -2,9 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Jenkins credentials ID (Username + DockerHub token)
-        DOCKERHUB_CREDS = credentials('dockerhub-creds')
-
         DOCKERHUB_USERNAME = 'markazidev2005'
 
         BACKEND_IMAGE  = "${DOCKERHUB_USERNAME}/react-flask-mongodb-v1_api"
@@ -50,11 +47,15 @@ pipeline {
         stage('Login to Docker Hub') {
             steps {
                 echo '🔐 Logging into Docker Hub...'
-                sh """
-                  echo ${DOCKERHUB_CREDS_PSW} | docker login \
-                    -u ${DOCKERHUB_CREDS_USR} \
-                    --password-stdin
-                """
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
+                }
             }
         }
 
